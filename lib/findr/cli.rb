@@ -88,7 +88,13 @@ module Findr
         linenumber = 0
         tempfile = Tempfile.new( 'current_file.basename' ) if options[:replace] && options[:force]
         current_file.each_line do |l|
-          l = coding_to_utf8.iconv(l)
+          begin
+            l = coding_to_utf8.iconv(l)
+          rescue Iconv::IllegalSequence
+            stdout.puts "Skipping file #{current_file} because of error on line #{linenumber}: #{$!.class} #{$!.message}"
+            tempfile.unlink if tempfile
+            break
+          end
           linenumber += 1
           if l=~ options[:find]
             stats[:local_hits] += 1
