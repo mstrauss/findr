@@ -2,15 +2,19 @@
 require 'pathname'
 require 'tempfile'
 require 'optparse'
+require 'yaml'
 
 # this is deprecated on 1.9, but still works fine
 require 'iconv'
 
 require 'findr/version'
 
+
 module Findr
   
   class CLI
+    
+    CONFIGFILE = '.findr-config'
     
     def colorize(text, color_code)
       "\e[#{color_code}m#{text}\e[0m"
@@ -40,6 +44,15 @@ module Findr
       options[:glob] = '*'
       options[:coding] = 'utf-8'
       
+      # options from file, if present
+      if File.exists?( CONFIGFILE )
+        file_options = YAML.load_file(CONFIGFILE)
+        file_options.delete(:save)
+        options.merge!( file_options )
+        stdout.puts green "Using #{CONFIGFILE}."
+      end
+      
+      # parse command line
       @option_parser = OptionParser.new do |opts|
         opts.on('-g', '--glob FILE SEARCH GLOB', 'e.g. "*.{rb,erb}"') do |glob|
           options[:glob] = glob
@@ -50,9 +63,21 @@ module Findr
         opts.on('-c', '--coding FILE CODING SYSTEM', 'e.g. "iso-8859-1"') do |coding|
           options[:coding] = coding
         end
+        opts.on('-s', '--save', "saves your options to #{CONFIGFILE} for future use") do
+          options[:save] = true
+        end
       end
       @option_parser.banner = self.banner
       @option_parser.parse!( arguments )
+      
+      # optionally save the configuration to file
+      if options[:save]
+        options.delete(:save)
+        stdout.puts red "Nothing to save." unless options
+        File.open( CONFIGFILE, 'w' ) { |file| YAML::dump( options, file ) }
+        stdout.puts green "Saved options to file #{CONFIGFILE}."
+        exit
+      end
       
       show_usage if arguments.size == 0
       arguments.clone.each do |arg|
@@ -66,9 +91,8 @@ module Findr
           show_usage
         end
       end
+      
       show_usage if arguments.size != 0
-      
-      
       stdout.puts green "File inclusion glob: " + options[:glob]
       stdout.puts green "Searching for regex " + options[:find].to_s
       
