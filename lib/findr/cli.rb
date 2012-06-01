@@ -45,7 +45,7 @@ module Findr
         opts.on('-x', '--execute', 'actually execute the replacement') do
           options[:force] = true
         end
-        opts.on('-c', '--coding FILE CODING SYSTEM', 'e.g. "latin-1"') do |coding|
+        opts.on('-c', '--coding FILE CODING SYSTEM', 'e.g. "iso-8859-1"') do |coding|
           options[:coding] = coding
         end
       end
