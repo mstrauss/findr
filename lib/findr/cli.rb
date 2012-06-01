@@ -6,6 +6,8 @@ require 'optparse'
 # this is deprecated on 1.9, but still works fine
 require 'iconv'
 
+require 'findr/version'
+
 module Findr
   
   class CLI
@@ -20,8 +22,8 @@ module Findr
     def blue(text); colorize(text, 34); end
     
     def banner
-      ("Usage: #{Pathname($0).basename} [options] <search regex> [<replacement string>]" + $/) +
-      red("THIS PROGRAM COMES WITH NO WARRANTY WHATSOEVER. MAKE BACKUPS!")
+      red( "FINDR VERSION #{Findr::VERSION}. THIS PROGRAM COMES WITH NO WARRANTY WHATSOEVER. MAKE BACKUPS!") + $/ +
+      "Usage: #{Pathname($0).basename} [options] <search regex> [<replacement string>]"
     end
     
     def show_usage
