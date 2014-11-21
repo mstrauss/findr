@@ -17,6 +17,7 @@ A ruby find and replace tool for batch editing text files.
 EOF
   
   dependencies = [
+    [:test, 'rake']
     # Examples:
     # [:runtime,     "rack",  "~> 1.1"],
     # [:development, "rspec", "~> 2.1"],
