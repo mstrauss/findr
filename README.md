@@ -29,13 +29,13 @@ Basic Examples
         findr '123\.456'
 
 
-* To **replace the term** 123.456 by 123.456:
+* To **replace the term** 123.456 by 33.0:
 
-        findr '123\.456' 123.456
+        findr '123\.456' 33.0
 
     The previous command shows a preview of what would happen. Adding `-x` executes the change and irreversibly alters your files:
 
-        findr 123\.456 123.456 -x
+        findr 123\.456 33.0 -x
 
 
 * To do a **case-insensitive search** for `word` use
