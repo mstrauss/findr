@@ -40,7 +40,7 @@ module Findr
       string.force_encoding(@other_coding)
       fail Error.new("Encoding '#{@other_coding}' is invalid.") unless string.valid_encoding?
       return string.encode('UTF-8')
-    rescue Exception
+    rescue
       raise Error, "Error when decoding from '#{@other_coding}' into 'UTF-8'."
     end
 
