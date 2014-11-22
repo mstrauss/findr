@@ -27,10 +27,11 @@ module Findr
     end
 
     def initialize( other_coding )
-      @other_coding = Encoding.find(other_coding)
       if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
         @coding_to_utf8 = Iconv.new('UTF-8', other_coding)
         @utf8_to_coding = Iconv.new(other_coding, 'UTF-8')
+      else
+        @other_coding = Encoding.find(other_coding)
       end
     end
 
