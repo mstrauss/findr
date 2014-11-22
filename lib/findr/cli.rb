@@ -39,7 +39,7 @@ module Findr
 
       # default options
       options = {}
-      options[:glob] = '*'
+      options[:glob] = '**/*'
       options[:coding] = 'utf-8'
 
       # options from file, if present
@@ -107,7 +107,7 @@ module Findr
 
       coder = Encoder.new( options[:coding] )
 
-      Pathname.glob("**/#{options[:glob]}").each do |current_file|
+      Pathname.glob("#{options[:glob]}").each do |current_file|
         next unless current_file.file?
         stats[:total_files] += 1
         stats[:local_hits] = 0
