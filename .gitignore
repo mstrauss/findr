@@ -1,3 +1,4 @@
 *.gem
 .findr-config
-.rbenv-version
+.ruby-version
+Gemfile.lock
