@@ -38,6 +38,9 @@ module Findr
     end
 
     def execute(stdout, arguments=[])
+
+      @stdout = stdout
+
       # unless arguments[0]
       # end
 
@@ -74,6 +77,9 @@ module Findr
         opts.on('-C', '--codings-list', "list available encodings") do
           pp Encoder.list
           exit
+        end
+        opts.on('-v', '--verbose', "verbose output") do
+          @verbose = true
         end
       end
       @option_parser.banner = self.banner
@@ -130,20 +136,27 @@ module Findr
 
       coder = Encoder.new( options[:coding] )
 
-      Pathname.glob("#{options[:gglob]}").each do |current_file|
+      verbose "Building file tree..."
+      files = Pathname.glob("#{options[:gglob]}")
+      verbose ['  ', files.count, ' files found.']
+      files.each do |current_file|
         next unless current_file.file?
+        verbose ["Reading file ", current_file]
         stats[:total_files] += 1
         stats[:local_hits] = 0
         firstmatch = true
         linenumber = 0
-        tempfile = Tempfile.new( 'current_file.basename' ) if options[:replace] && options[:force]
+        tempfile = Tempfile.new( 'current_file.basename' ) and verbose(['  Create tempfile ',tempfile.path]) if options[:replace] && options[:force]
         clear_context(); print_post_context = 0
         current_file.each_line do |l|
           begin
             l, coding = coder.decode(l)
           rescue Encoder::Error
             stdout.puts "Skipping file #{current_file} because of error on line #{linenumber}: #{$!.original.class} #{$!.original.message}"
-            tempfile.unlink if tempfile
+            if tempfile
+              tempfile_path = tempfile.path
+              tempfile.unlink and verbose(['  Delete tempfile ', tempfile_path])
+            end
             break
           end
           linenumber += 1
@@ -154,17 +167,17 @@ module Findr
             end
             if @context_lines > 0
               pop_context.map do |linenumber, l|
-                print_line( stdout, linenumber, l, coding, false )
+                print_line( linenumber, l, coding, false )
               end
               print_post_context = @context_lines
             end
-            print_line( stdout, linenumber, l.gsub( /(#{options[:find]})/, bold('\1') ), coding, true )
+            print_line( linenumber, l.gsub( /(#{options[:find]})/, bold('\1') ), coding, :bold )
             firstmatch = false
             if options[:replace]
               l_repl = l.gsub( options[:find], options[:replace] )
               tempfile.puts coder.encode(l_repl, coding) if tempfile
               replacement_done = true
-              print_line( stdout, linenumber, l_repl, coding, :blue )
+              print_line( linenumber, l_repl, coding, :blue )
             end
           else
             if tempfile
@@ -172,7 +185,7 @@ module Findr
             end
             if print_post_context > 0
               print_post_context -= 1
-              print_line( stdout, linenumber, l, coding )
+              print_line( linenumber, l, coding )
             else
               push_context([linenumber, l])
             end
@@ -180,8 +193,12 @@ module Findr
         end
         if tempfile
           tempfile.close
-          FileUtils.cp( tempfile.path, current_file ) if stats[:local_hits] > 0
-          tempfile.unlink
+          if stats[:local_hits] > 0
+            FileUtils.cp( tempfile.path, current_file )
+            verbose(['  Copy tempfile ', tempfile.path, ' to ', current_file])
+          end
+          tempfile_path = tempfile.path
+          tempfile.unlink and verbose(['  Delete tempfile ', tempfile_path])
         end
 
         if stats[:local_hits] > 0
@@ -195,20 +212,20 @@ module Findr
       stdout.puts green( "#{stats[:total_hits]} occurences (lines) in #{stats[:hit_files]} of #{stats[:total_files]} files found." )
     end
 
-    def print_line( stdout, linenumber, line, coding, color = nil )
+    def print_line( linenumber, line, coding, color = nil )
       case color
       when :bold
-        stdout.write( bold_yellow( "%6d: " % [linenumber] ) )
-        stdout.write gray("(coding: #{coding}) ")
-        stdout.puts line
+        @stdout.write( bold_yellow( "%6d: " % [linenumber] ) )
+        @stdout.write gray("(coding: #{coding}) ")
+        @stdout.puts line
       when :blue
-        stdout.write( blue( "%6d: " % [linenumber] ) )
-        stdout.write gray("(coding: #{coding}) ")
-        stdout.puts blue line
+        @stdout.write( blue( "%6d: " % [linenumber] ) )
+        @stdout.write gray("(coding: #{coding}) ")
+        @stdout.puts blue line
       else
-        stdout.write( yellow( "%6d: " % [linenumber] ) )
-        stdout.write gray("(coding: #{coding}) ")
-        stdout.puts line
+        @stdout.write( yellow( "%6d: " % [linenumber] ) )
+        @stdout.write gray("(coding: #{coding}) ")
+        @stdout.puts line
       end
     end
 
@@ -227,6 +244,11 @@ module Findr
       clear_context()
       return c
     end
+
+    def verbose(text_or_arry)
+      @stdout.puts( gray( Array(text_or_arry).join ) ) if @verbose
+    end
+
 
   end
 
