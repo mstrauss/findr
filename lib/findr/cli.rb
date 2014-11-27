@@ -59,6 +59,9 @@ module Findr
           options[:gglob] = glob
           fail "-G option cannot be combined with -g" if options[:glob]
         end
+        opts.on('-i', '--ignore-case', 'do a case-insensitive search') do
+          options[:re_opt_i] = true
+        end
         opts.on('-x', '--execute', 'actually execute the replacement') do
           options[:force] = true
         end
@@ -96,7 +99,7 @@ module Findr
       show_usage if arguments.size == 0
       arguments.clone.each do |arg|
         if !options[:find]
-          options[:find] = Regexp.compile( arg )
+          options[:find] = Regexp.compile( arg, options[:re_opt_i] )
           arguments.delete_at(0)
         elsif !options[:replace]
           options[:replace] = arg
