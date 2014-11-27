@@ -46,14 +46,6 @@ module Findr
       options[:coding] = 'utf-8'
       @context_lines = 0
 
-      # options from file, if present
-      if File.exists?( CONFIGFILE )
-        file_options = YAML.load_file(CONFIGFILE)
-        file_options.delete(:save)
-        options.merge!( file_options )
-        stdout.puts green "Using #{CONFIGFILE}."
-      end
-
       # parse command line
       @option_parser = OptionParser.new do |opts|
         opts.on('-g', '--glob FILE SEARCH GLOB', 'e.g. "*.{rb,erb}"; glob relative to the current directory') do |glob|
@@ -92,9 +84,6 @@ module Findr
         options[:glob] = '*'
       end
 
-      # build default global glob from local glob, if necessary
-      options[:gglob] = '**/' + options[:glob] unless options[:gglob]
-
       # optionally save the configuration to file
       if options[:save]
         options.delete(:save)
@@ -102,7 +91,18 @@ module Findr
         File.open( CONFIGFILE, 'w' ) { |file| YAML::dump( options, file ) }
         stdout.puts green "Saved options to file #{CONFIGFILE}."
         exit
+      else
+        # options from file, if present
+        if File.exists?( CONFIGFILE )
+          file_options = YAML.load_file(CONFIGFILE)
+          file_options.delete(:save)
+          options.merge!( file_options )
+          stdout.puts green "Using #{CONFIGFILE}."
+        end
       end
+
+      # build default global glob from local glob, if necessary
+      options[:gglob] = '**/' + options[:glob] unless options[:gglob]
 
       show_usage if arguments.size == 0
       arguments.clone.each do |arg|
