@@ -22,10 +22,12 @@ module Findr
     def green(text); colorize(text, 32); end
     def yellow(text); colorize(text, 33); end
     def blue(text); colorize(text, 34); end
+    def bold(text); colorize(text, '1;30'); end
+    def blue_bold(text); colorize(text, '1;34'); end
 
     def banner
       red( "FINDR VERSION #{Findr::VERSION}. THIS PROGRAM COMES WITH NO WARRANTY WHATSOEVER. MAKE BACKUPS!") + $/ +
-      "Usage: #{Pathname($0).basename} [options] <search regex> [<replacement string>]"
+      bold( "Usage: #{Pathname($0).basename} [options] <search regex> [<replacement string>]" )
     end
 
     def show_usage
@@ -144,7 +146,8 @@ module Findr
               stdout.puts red("#{current_file.cleanpath}:")
             end
             stdout.write( yellow( "%6d:" % [linenumber, l] ) )
-            stdout.puts l
+            stdout.puts l.gsub( /(#{options[:find]})/, bold('\1') )
+            # stdout.puts l
             firstmatch = false
             if options[:replace]
               stdout.write( blue( "%6d:" % [linenumber, l] ) )
