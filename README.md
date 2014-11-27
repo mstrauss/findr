@@ -1,4 +1,4 @@
-*findr* is a ruby find and replace tool for batch editing text files using (advanced) regular expressions.
+*findr* is a ruby find and replace tool for mass editing of text files using (advanced) regular expressions.
 
 [![Build Status](https://travis-ci.org/mstrauss/findr.svg)](https://travis-ci.org/mstrauss/findr)
 
