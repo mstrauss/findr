@@ -22,6 +22,7 @@ module Findr
     def green(text); colorize(text, 32); end
     def yellow(text); colorize(text, 33); end
     def blue(text); colorize(text, 34); end
+    def gray(text); colorize(text, 2); end
     def bold(text); colorize(text, '1;30'); end
     def bold_yellow(text); colorize(text, '1;33'); end
     def blue_bold(text); colorize(text, '1;34'); end
@@ -139,7 +140,7 @@ module Findr
         clear_context(); print_post_context = 0
         current_file.each_line do |l|
           begin
-            l = coder.decode(l)
+            l, coding = coder.decode(l)
           rescue Encoder::Error
             stdout.puts "Skipping file #{current_file} because of error on line #{linenumber}: #{$!.original.class} #{$!.original.message}"
             tempfile.unlink if tempfile
@@ -153,30 +154,25 @@ module Findr
             end
             if @context_lines > 0
               pop_context.map do |linenumber, l|
-                stdout.write( yellow( "%6d: " % [linenumber] ) )
-                stdout.puts l
+                print_line( stdout, linenumber, l, coding, false )
               end
               print_post_context = @context_lines
             end
-            stdout.write( bold_yellow( "%6d: " % [linenumber] ) )
-            stdout.puts l.gsub( /(#{options[:find]})/, bold('\1') )
-            # stdout.puts l
+            print_line( stdout, linenumber, l.gsub( /(#{options[:find]})/, bold('\1') ), coding, true )
             firstmatch = false
             if options[:replace]
-              stdout.write( blue( "%6d: " % [linenumber] ) )
               l_repl = l.gsub( options[:find], options[:replace] )
-              tempfile.puts coder.encode(l_repl) if tempfile
-              stdout.puts blue l_repl
+              tempfile.puts coder.encode(l_repl, coding) if tempfile
               replacement_done = true
+              print_line( stdout, linenumber, l_repl, coding, :blue )
             end
           else
             if tempfile
-              tempfile.puts coder.encode(l)
+              tempfile.puts coder.encode(l, coding)
             end
             if print_post_context > 0
               print_post_context -= 1
-              stdout.write( yellow( "%6d: " % [linenumber] ) )
-              stdout.puts l
+              print_line( stdout, linenumber, l, coding )
             else
               push_context([linenumber, l])
             end
@@ -197,6 +193,23 @@ module Findr
 
       # some statistics
       stdout.puts green( "#{stats[:total_hits]} occurences (lines) in #{stats[:hit_files]} of #{stats[:total_files]} files found." )
+    end
+
+    def print_line( stdout, linenumber, line, coding, color = nil )
+      case color
+      when :bold
+        stdout.write( bold_yellow( "%6d: " % [linenumber] ) )
+        stdout.write gray("(coding: #{coding}) ")
+        stdout.puts line
+      when :blue
+        stdout.write( blue( "%6d: " % [linenumber] ) )
+        stdout.write gray("(coding: #{coding}) ")
+        stdout.puts blue line
+      else
+        stdout.write( yellow( "%6d: " % [linenumber] ) )
+        stdout.write gray("(coding: #{coding}) ")
+        stdout.puts line
+      end
     end
 
     def clear_context

@@ -31,26 +31,31 @@ module Findr
         @coding_to_utf8 = Iconv.new('UTF-8', other_coding)
         @utf8_to_coding = Iconv.new(other_coding, 'UTF-8')
       else
-        @other_coding = Encoding.find(other_coding)
+        @other_coding = other_coding.split(',').map {|coding| Encoding.find(coding)}
       end
     end
 
     # Encodes given +string+ from +@other_coding+ to utf8.
     def decode( string )
       return @coding_to_utf8.iconv(string) if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
-      string.force_encoding(@other_coding)
-      fail Error.new("Encoding '#{@other_coding}' is invalid.") unless string.valid_encoding?
-      return string.encode('UTF-8')
+      coding = nil
+      have_valid_coding = @other_coding.any? do |c|
+        string.force_encoding(c)
+        coding = c
+        string.valid_encoding?
+      end
+      fail Error.new("No valid coding given.") unless have_valid_coding
+      return [string.encode('UTF-8'), coding]
     rescue
       raise Error, "Error when decoding from '#{@other_coding}' into 'UTF-8'."
     end
 
     # Encodes given utf8 +string+ into +@other_coding+.
-    def encode( string )
+    def encode( string, coding )
       return @utf8_to_coding.iconv(string) if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
-      return string.encode(@other_coding)
+      return string.encode(coding)
     rescue
-      raise Error, "Error when encoding from 'UTF-8' into '#{@other_coding}'."
+      raise Error, "Error when encoding from 'UTF-8' into '#{coding}'."
     end
   end
 
