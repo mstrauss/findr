@@ -21,7 +21,11 @@ module Findr
 
     class <<self
       def list
-        return Iconv.list if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
+        begin
+          return Iconv.list
+        rescue
+          puts "Iconv.list not supported on Ruby #{RUBY_VERSION}. Try 'iconv -l' on the command line."
+        end if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
         return Encoding.list.map(&:to_s)
       end
     end
