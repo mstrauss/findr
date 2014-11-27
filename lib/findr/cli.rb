@@ -39,7 +39,6 @@ module Findr
 
       # default options
       options = {}
-      options[:glob] = '**/*'
       options[:coding] = 'utf-8'
 
       # options from file, if present
@@ -52,8 +51,13 @@ module Findr
 
       # parse command line
       @option_parser = OptionParser.new do |opts|
-        opts.on('-g', '--glob FILE SEARCH GLOB', 'e.g. "*.{rb,erb}"') do |glob|
+        opts.on('-g', '--glob FILE SEARCH GLOB', 'e.g. "*.{rb,erb}"; glob relative to the current directory') do |glob|
           options[:glob] = glob
+          fail "-g option cannot be combined with -G" if options[:gglob]
+        end
+        opts.on('-G', '--global-glob GLOB', 'e.g. "/**/*.{rb,erb}"; glob may escape the current directory') do |glob|
+          options[:gglob] = glob
+          fail "-G option cannot be combined with -g" if options[:glob]
         end
         opts.on('-x', '--execute', 'actually execute the replacement') do
           options[:force] = true
@@ -71,6 +75,14 @@ module Findr
       end
       @option_parser.banner = self.banner
       @option_parser.parse!( arguments )
+
+      # default (local) glob
+      if !options[:glob] && !options[:gglob]
+        options[:glob] = '*'
+      end
+
+      # build default global glob from local glob, if necessary
+      options[:gglob] = '**/' + options[:glob] unless options[:gglob]
 
       # optionally save the configuration to file
       if options[:save]
@@ -95,7 +107,7 @@ module Findr
       end
 
       show_usage if arguments.size != 0
-      stdout.puts green "File inclusion glob: " + options[:glob]
+      stdout.puts green "File inclusion glob: " + options[:gglob]
       stdout.puts green "Searching for regex " + options[:find].to_s
 
       # some statistics
@@ -107,7 +119,7 @@ module Findr
 
       coder = Encoder.new( options[:coding] )
 
-      Pathname.glob("#{options[:glob]}").each do |current_file|
+      Pathname.glob("#{options[:gglob]}").each do |current_file|
         next unless current_file.file?
         stats[:total_files] += 1
         stats[:local_hits] = 0
