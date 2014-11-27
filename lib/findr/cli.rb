@@ -23,6 +23,7 @@ module Findr
     def yellow(text); colorize(text, 33); end
     def blue(text); colorize(text, 34); end
     def bold(text); colorize(text, '1;30'); end
+    def bold_yellow(text); colorize(text, '1;33'); end
     def blue_bold(text); colorize(text, '1;34'); end
 
     def banner
@@ -42,6 +43,7 @@ module Findr
       # default options
       options = {}
       options[:coding] = 'utf-8'
+      @context_lines = 0
 
       # options from file, if present
       if File.exists?( CONFIGFILE )
@@ -63,6 +65,9 @@ module Findr
         end
         opts.on('-i', '--ignore-case', 'do a case-insensitive search') do
           options[:re_opt_i] = true
+        end
+        opts.on('-n', '--number-of-context LINES', 'number of lines in context to print') do |lines|
+          @context_lines = lines.to_i
         end
         opts.on('-x', '--execute', 'actually execute the replacement') do
           options[:force] = true
@@ -131,6 +136,7 @@ module Findr
         firstmatch = true
         linenumber = 0
         tempfile = Tempfile.new( 'current_file.basename' ) if options[:replace] && options[:force]
+        clear_context(); print_post_context = 0
         current_file.each_line do |l|
           begin
             l = coder.decode(l)
@@ -145,19 +151,35 @@ module Findr
             if firstmatch
               stdout.puts red("#{current_file.cleanpath}:")
             end
-            stdout.write( yellow( "%6d:" % [linenumber, l] ) )
+            if @context_lines > 0
+              pop_context.map do |linenumber, l|
+                stdout.write( yellow( "%6d: " % [linenumber] ) )
+                stdout.puts l
+              end
+              print_post_context = @context_lines
+            end
+            stdout.write( bold_yellow( "%6d: " % [linenumber] ) )
             stdout.puts l.gsub( /(#{options[:find]})/, bold('\1') )
             # stdout.puts l
             firstmatch = false
             if options[:replace]
-              stdout.write( blue( "%6d:" % [linenumber, l] ) )
+              stdout.write( blue( "%6d: " % [linenumber] ) )
               l_repl = l.gsub( options[:find], options[:replace] )
               tempfile.puts coder.encode(l_repl) if tempfile
               stdout.puts blue l_repl
               replacement_done = true
             end
-          elsif tempfile
-            tempfile.puts coder.encode(l)
+          else
+            if tempfile
+              tempfile.puts coder.encode(l)
+            end
+            if print_post_context > 0
+              print_post_context -= 1
+              stdout.write( yellow( "%6d: " % [linenumber] ) )
+              stdout.puts l
+            else
+              push_context([linenumber, l])
+            end
           end
         end
         if tempfile
@@ -175,6 +197,22 @@ module Findr
 
       # some statistics
       stdout.puts green( "#{stats[:total_hits]} occurences (lines) in #{stats[:hit_files]} of #{stats[:total_files]} files found." )
+    end
+
+    def clear_context
+      @context = []
+    end
+
+    def push_context(line)
+      @context.shift if @context.length >= @context_lines
+      @context.push(line)
+    end
+
+    def pop_context
+      return [] unless @context_lines > 0
+      c = @context
+      clear_context()
+      return c
     end
 
   end
