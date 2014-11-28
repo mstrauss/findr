@@ -1,5 +1,7 @@
-task :default => [:test]
+require 'rake/rspec'
+
+task :default => [:test, :spec]
 
 task :test do
-  exit system "bin/findr -g '*.rb' VERSION"
+  fail("Command failed.") unless system("bin/findr -g '*.rb' VERSION")
 end

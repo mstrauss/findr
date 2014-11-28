@@ -19,7 +19,8 @@ EOF
 
   dependencies = [
     [:test, 'rake', '~> 10.0'],
-    [:development, "rspec", "~> 3.1"],
+    [:test, 'rspec', "~> 3.1"],
+    [:test, 'rake-rspec', "~> 0.0.2"],
     # [:runtime, 'contractual']
   ]
 
