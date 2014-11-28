@@ -14,7 +14,7 @@ class Findr::Encoder
         string.valid_encoding?
       end
       fail Error.new("No valid coding given.") unless have_valid_coding
-      return [string.encode('UTF-8'), coding]
+      return [string.encode('UTF-8'), coding.to_s]
     rescue
       raise Error, "Error when decoding from '#{@other_coding}' into 'UTF-8': #{$!}"
     end

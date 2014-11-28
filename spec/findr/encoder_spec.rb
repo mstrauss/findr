@@ -41,19 +41,16 @@ module Findr
     describe 'decode' do
 
       it 'should accept single codings' do
-        skip_old_ruby
-        expect(Encoder.new('utf-8').decode(utf8_string)).to eq([utf8_string, Encoding.find('UTF-8')])
-        expect(Encoder.new('iso-8859-1').decode(latin1_string)).to eq([utf8_string, Encoding.find('ISO-8859-1')])
-        expect(Encoder.new('ascii').decode('123')).to eq(['123', Encoding.find('ascii')])
+        expect(Encoder.new('utf-8').decode(utf8_string)).to eq([utf8_string, 'UTF-8'])
+        expect(Encoder.new('iso-8859-1').decode(latin1_string)).to eq([utf8_string, 'ISO-8859-1'])
+        expect(Encoder.new('us-ascii').decode('123')).to eq(['123', 'US-ASCII'])
       end
 
       it 'should accept multiple encodings' do
-        skip_old_ruby
-        expect(Encoder.new('ascii,cp850').decode(cp850_string)).to eq([utf8_string, Encoding.find('cp850')])
+        expect(Encoder.new('ascii,cp850').decode(cp850_string)).to eq([utf8_string, 'CP850'])
       end
 
       it 'should fail if no valid coding can be found' do
-        skip_old_ruby
         expect{Encoder.new('ascii').decode("123\x94")}.to \
           raise_error(Encoder::Error) do |error|
             expect(error.original).to be_kind_of(Encoder::Error)
@@ -64,7 +61,6 @@ module Findr
 
     describe 'encode' do
       it 'should accept single codings' do
-        skip_old_ruby
         expect(Encoder.new('utf-8').encode(utf8_string, 'utf-8')).to eq(utf8_string)
       end
 
