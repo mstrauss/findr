@@ -10,6 +10,6 @@ require 'iconv' if RUBY_VERSION < Findr::FIRST_RUBY_WITHOUT_ICONV
 require 'findr/version'
 require 'findr/error'
 require 'findr/strategy_proxy'
-require 'findr/encoder'
 require 'findr/encoder/iconv'
 require 'findr/encoder/string'
+require 'findr/encoder'

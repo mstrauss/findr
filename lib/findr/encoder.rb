@@ -6,27 +6,14 @@ module Findr
     class Error < Findr::Error; end
 
     include StrategyProxy
+    @@strategy = RUBY_VERSION < Findr::FIRST_RUBY_WITHOUT_ICONV ? Encoder::Iconv : Encoder::String
 
     provides :decode, :string
     provides :encode, :string, :into_coding
+    singleton_provides :list
 
     def initialize( other_codings )
-      strategy = RUBY_VERSION < Findr::FIRST_RUBY_WITHOUT_ICONV ? Encoder::Iconv : Encoder::String
-      @strategy = strategy.new(other_codings)
-    end
-
-    class <<self
-      if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
-        def list
-          return ::Iconv.list
-        rescue
-          fail Error, "Iconv.list not supported on Ruby #{RUBY_VERSION}. Try 'iconv -l' on the command line."
-        end
-      else
-        def list
-          return Encoding.list.map(&:to_s)
-        end
-      end
+      @strategy = @@strategy.new(other_codings)
     end
 
   end

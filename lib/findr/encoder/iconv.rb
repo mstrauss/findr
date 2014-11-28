@@ -17,6 +17,13 @@ class Findr::Encoder
     rescue
       raise Error, "Error when encoding from 'UTF-8' into '#{coding}'."
     end
+
+    # Returns a list of valid encodings
+    def self.list
+      return ::Iconv.list
+    rescue
+      fail Error, "Iconv.list not supported on Ruby #{RUBY_VERSION}. Try 'iconv -l' on the command line."
+    end
   end
 
 end

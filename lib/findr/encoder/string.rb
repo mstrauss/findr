@@ -25,6 +25,11 @@ class Findr::Encoder
     rescue
       raise Error, "Error when encoding from 'UTF-8' into '#{coding}'."
     end
+
+    # Returns a list of valid encodings
+    def self.list
+      return Encoding.list.map(&:to_s)
+    end
   end
 
 end
