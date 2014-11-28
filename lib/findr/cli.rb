@@ -5,9 +5,6 @@ require 'optparse'
 require 'yaml'
 require 'pp'
 
-require 'findr/version'
-require 'findr/encoder'
-
 module Findr
 
   class CLI

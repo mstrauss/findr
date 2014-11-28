@@ -1,66 +1,34 @@
-FIRST_RUBY_WITHOUT_ICONV = '1.9'
-require 'iconv' if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
-
 module Findr
-
-  # Class for wrapping original exceptions, which could be from Iconv (Ruby 1.8)
-  # or String (Ruby >=1.9).
-  # ()
-  class Error < ::StandardError
-    attr_reader :original
-    def initialize(msg, original=$!)
-      super(msg)
-      @original = original;
-    end
-  end
 
   # Wrapper class for String#encode (Ruby >=1.9) and Iconv#iconv (Ruby 1.8).
   class Encoder
 
     class Error < Findr::Error; end
 
+    include StrategyProxy
+
+    provides :decode, :string
+    provides :encode, :string, :into_coding
+
+    def initialize( other_codings )
+      strategy = RUBY_VERSION < Findr::FIRST_RUBY_WITHOUT_ICONV ? Encoder::Iconv : Encoder::String
+      @strategy = strategy.new(other_codings)
+    end
+
     class <<self
-      def list
-        begin
-          return Iconv.list
-        rescue
-          puts "Iconv.list not supported on Ruby #{RUBY_VERSION}. Try 'iconv -l' on the command line."
-        end if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
-        return Encoding.list.map(&:to_s)
-      end
-    end
-
-    def initialize( other_coding )
       if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
-        @coding_to_utf8 = Iconv.new('UTF-8', other_coding)
-        @utf8_to_coding = Iconv.new(other_coding, 'UTF-8')
+        def list
+          return ::Iconv.list
+        rescue
+          fail Error, "Iconv.list not supported on Ruby #{RUBY_VERSION}. Try 'iconv -l' on the command line."
+        end
       else
-        @other_coding = other_coding.split(',').map {|coding| Encoding.find(coding)}
+        def list
+          return Encoding.list.map(&:to_s)
+        end
       end
     end
 
-    # Encodes given +string+ from +@other_coding+ to utf8.
-    def decode( string )
-      return @coding_to_utf8.iconv(string) if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
-      coding = nil
-      have_valid_coding = @other_coding.any? do |c|
-        string.force_encoding(c)
-        coding = c
-        string.valid_encoding?
-      end
-      fail Error.new("No valid coding given.") unless have_valid_coding
-      return [string.encode('UTF-8'), coding]
-    rescue
-      raise Error, "Error when decoding from '#{@other_coding}' into 'UTF-8'."
-    end
-
-    # Encodes given utf8 +string+ into +@other_coding+.
-    def encode( string, coding )
-      return @utf8_to_coding.iconv(string) if RUBY_VERSION < FIRST_RUBY_WITHOUT_ICONV
-      return string.encode(coding)
-    rescue
-      raise Error, "Error when encoding from 'UTF-8' into '#{coding}'."
-    end
   end
 
 end

@@ -18,10 +18,9 @@ A ruby find and replace tool for mass editing of text files.
 EOF
 
   dependencies = [
-    [:test, 'rake', '~> 10.0']
-    # Examples:
-    # [:runtime,     "rack",  "~> 1.1"],
-    # [:development, "rspec", "~> 2.1"],
+    [:test, 'rake', '~> 10.0'],
+    [:development, "rspec", "~> 3.1"],
+    # [:runtime, 'contractual']
   ]
 
   s.files         = Dir['**/*']-Dir['*.lock','*.txt','*.gem']
