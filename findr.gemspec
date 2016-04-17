@@ -21,7 +21,7 @@ EOF
     [:test, 'rake', '~> 10.0'],
     [:test, 'rspec', "~> 3.1"],
     [:test, 'rake-rspec', "~> 0.0.2"],
-    # [:runtime, 'contractual']
+    [:runtime, 'bundler', "~>1.10"]
   ]
 
   s.files         = Dir['**/*']-Dir['*.lock','*.txt','*.gem']
