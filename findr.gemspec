@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.name     = "findr"
   s.version  = Findr::VERSION.dup
   s.licenses = ['MIT']
-  s.date     = "2014-11-25"
+  s.date     = "2018-10-15"
   s.summary  = "A ruby find and replace tool for mass editing text files."
   s.email    = "Markus@ITstrauss.eu"
   s.homepage = "https://github.com/mstrauss/findr"

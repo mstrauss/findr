@@ -6,13 +6,17 @@ Usage
 -----
 
     Usage: findr [options] <search regex> [<replacement string>]
-        -g, --glob FILE SEARCH GLOB      e.g. "*.{rb,erb}"
+        -g, --glob FILE SEARCH GLOB      e.g. "*.{rb,erb}"; glob relative to the current directory
+        -G, --global-glob GLOB           e.g. "/**/*.{rb,erb}"; glob may escape the current directory
+        -i, --ignore-case                do a case-insensitive search
+        -n, --number-of-context LINES    number of lines in context to print
         -x, --execute                    actually execute the replacement
         -c, --coding FILE CODING SYSTEM  e.g. "iso-8859-1"
         -s, --save                       saves your options to .findr-config for future use
         -C, --codings-list               list available encodings
-
-*findr* recursively searches for the given [regular expression](http://rubular.com) in all files matching the given [glob](http://www.ruby-doc.org/core-2.1.5/Dir.html#method-c-glob), **starting from the current subdirectory**.
+        -v, --verbose                    verbose output
+    
+*findr* recursively searches for the given [regular expression](http://rubular.com) in all files matching the given [glob](http://www.ruby-doc.org/core-2.5.1/Dir.html#method-c-glob), **starting from the current subdirectory**.
 
 
 Basic Examples
