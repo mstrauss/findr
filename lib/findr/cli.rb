@@ -5,6 +5,7 @@ require 'optparse'
 require 'yaml'
 require 'pp'
 
+
 module Findr
 
   class CLI
@@ -16,6 +17,7 @@ module Findr
     end
 
     def red(text); colorize(text, 31); end
+    def light_red(text); colorize(text, 91); end
     def green(text); colorize(text, 32); end
     def yellow(text); colorize(text, 33); end
     def blue(text); colorize(text, 34); end
@@ -136,6 +138,7 @@ module Findr
       verbose "Building file tree..."
       files = Pathname.glob("#{options[:gglob]}")
       verbose ['  ', files.count, ' files found.']
+      stats[:exceptions] = 0
       files.each do |current_file|
         next unless current_file.file?
         verbose ["Reading file ", current_file]
@@ -145,47 +148,61 @@ module Findr
         linenumber = 0
         tempfile = Tempfile.new( 'current_file.basename' ) and verbose(['  Create tempfile ',tempfile.path]) if options[:replace] && options[:force]
         clear_context(); print_post_context = 0
-        current_file.each_line do |l|
-          begin
-            l, coding = coder.decode(l)
-          rescue Encoder::Error
-            stdout.puts "Skipping file #{current_file} because of error on line #{linenumber}: #{$!.original.class} #{$!.original.message}"
-            if tempfile
-              tempfile_path = tempfile.path
-              tempfile.unlink and verbose(['  Delete tempfile ', tempfile_path])
-            end
-            break
-          end
-          linenumber += 1
-          if l=~ options[:find]
-            stats[:local_hits] += 1
-            if firstmatch
-              stdout.puts red("#{current_file.cleanpath}:")
-            end
-            if @context_lines > 0
-              pop_context.map do |linenumber, l|
-                print_line( linenumber, l, coding, false )
+        begin
+          current_file.each_line do |l|
+            begin
+              l, coding = coder.decode(l)
+            rescue Encoder::Error
+              stdout.puts red "Skipping file #{current_file} because of error on line #{linenumber}: #{$!.original.class} #{$!.original.message}"
+              if tempfile
+                tempfile_path = tempfile.path
+                tempfile.unlink and verbose(['  Delete tempfile ', tempfile_path])
               end
-              print_post_context = @context_lines
+              break
             end
-            print_line( linenumber, l.gsub( /(#{options[:find]})/, bold('\1') ), coding, :bold )
-            firstmatch = false
-            if options[:replace]
-              l_repl = l.gsub( options[:find], options[:replace] )
-              tempfile.puts coder.encode(l_repl, coding) if tempfile
-              replacement_done = true
-              print_line( linenumber, l_repl, coding, :blue )
-            end
-          else
-            if tempfile
-              tempfile.puts coder.encode(l, coding)
-            end
-            if print_post_context > 0
-              print_post_context -= 1
-              print_line( linenumber, l, coding )
+            linenumber += 1
+            if l=~ options[:find]
+              stats[:local_hits] += 1
+              if firstmatch
+                stdout.puts red("#{current_file.cleanpath}:")
+              end
+              if @context_lines > 0
+                pop_context.map do |linenumber, l|
+                  print_line( linenumber, l, coding, false )
+                end
+                print_post_context = @context_lines
+              end
+              print_line( linenumber, l.gsub( /(#{options[:find]})/, bold('\1') ), coding, :bold )
+              firstmatch = false
+              if options[:replace]
+                l_repl = l.gsub( options[:find], options[:replace] )
+                tempfile.puts coder.encode(l_repl, coding) if tempfile
+                replacement_done = true
+                print_line( linenumber, l_repl, coding, :blue )
+              end
             else
-              push_context([linenumber, l])
+              if tempfile
+                tempfile.puts coder.encode(l, coding)
+              end
+              if print_post_context > 0
+                print_post_context -= 1
+                print_line( linenumber, l, coding )
+              else
+                push_context([linenumber, l])
+              end
             end
+          end
+        rescue SystemCallError
+          puts light_red "EXCEPTION: #$!"
+          stats[:exceptions] += 1
+          next
+        rescue SignalException
+          puts light_red "\n#{$!.class} received."
+          return
+        ensure
+          if tempfile
+            tempfile.close
+            tempfile.unlink
           end
         end
         if tempfile
@@ -207,6 +224,9 @@ module Findr
 
       # some statistics
       stdout.puts green( "#{stats[:total_hits]} occurences (lines) in #{stats[:hit_files]} of #{stats[:total_files]} files found." )
+      if stats[:exceptions] > 0
+        stdout.puts light_red( "#{stats[:exceptions]} exceptions occurenced." )
+      end
     end
 
     def print_line( linenumber, line, coding, color = nil )
