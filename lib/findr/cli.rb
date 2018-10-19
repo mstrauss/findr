@@ -80,9 +80,16 @@ module Findr
         opts.on('-v', '--verbose', "verbose output") do
           @verbose = true
         end
+        opts.on('-q', '--quiet', "be quiet, suppress warnings") do
+          @quiet = true
+        end
       end
       @option_parser.banner = self.banner
       @option_parser.parse!( arguments )
+
+      if @verbose and @quiet
+        raise ArgumentError.new("--verbse and --quiet are mutually exclusive options.")
+      end
 
       # default (local) glob
       if !options[:glob] && !options[:gglob]
@@ -153,7 +160,7 @@ module Findr
             begin
               l, coding = coder.decode(l)
             rescue Encoder::Error
-              stdout.puts red "Skipping file #{current_file} because of error on line #{linenumber}: #{$!.original.class} #{$!.original.message}"
+              stdout.puts red "Skipping file #{current_file} because of error on line #{linenumber}: #{$!.original.class} #{$!.original.message}" unless @quiet
               if tempfile
                 tempfile_path = tempfile.path
                 tempfile.unlink and verbose(['  Delete tempfile ', tempfile_path])
