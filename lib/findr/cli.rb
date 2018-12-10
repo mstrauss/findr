@@ -199,19 +199,7 @@ module Findr
               end
             end
           end
-        rescue SystemCallError
-          puts light_red "EXCEPTION: #$!"
-          stats[:exceptions] += 1
-          next
-        rescue SignalException
-          puts light_red "\n#{$!.class} received."
-          return
-        ensure
-          if tempfile
-            tempfile.close
-            tempfile.unlink
-          end
-        end
+
         if tempfile
           tempfile.close
           if stats[:local_hits] > 0
@@ -225,6 +213,20 @@ module Findr
         if stats[:local_hits] > 0
           stats[:total_hits] += stats[:local_hits]
           stats[:hit_files] += 1
+        end
+
+        rescue SystemCallError
+          puts light_red "EXCEPTION: #$!"
+          stats[:exceptions] += 1
+          next
+        rescue SignalException
+          puts light_red "\n#{$!.class} received."
+          return
+        ensure
+          if tempfile
+            tempfile.close
+            tempfile.unlink
+          end
         end
 
       end
